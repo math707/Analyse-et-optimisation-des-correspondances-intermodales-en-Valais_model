@@ -1,0 +1,44 @@
+{
+  "window": { "start_hhmm": "06:00", "end_hhmm": "09:00" },
+  "case_name": "Example_Route_Multistop",
+  "tie_breakers": { "module": "tie_breakers" },
+
+  "modes": [
+    {
+      "name": "Trains Hub",
+      "category": "rail",
+      "pattern_streams": [
+        { "label": "IC→X", "depart_minutes": [11, 44], "arr_offset_min": 0, "w": 1.0 }
+      ]
+    },
+    {
+      "name": "Bus Route",
+      "category": "bus",
+      "template": {
+        "topology": "route",
+        "stops": ["HubStop", "Stop2", "Stop3", "Stop4"],
+        "leg_minutes": [7, 6, 8, 5],
+        "dwells": { "Stop3": 3 },
+        "n_per_hour": 3,
+        "equal_headway": false
+      }
+    }
+  ],
+
+  "transfers": [
+    {
+      "from_service": "Trains Hub",
+      "from_anchor": "default",
+      "to_service": "Bus Route",
+      "to_anchor": "HubStop",
+      "walk_time": 2,
+      "min_margin": 1,
+      "w_up": 1.0,
+      "w_down": 0.0,
+      "tie_breaker": "min_variance",
+      "tie_params": {}
+    }
+  ],
+
+  "targets": ["Bus Route"]
+}

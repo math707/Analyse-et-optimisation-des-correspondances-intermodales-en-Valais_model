@@ -1,0 +1,105 @@
+{
+  "window": {
+    "start_hhmm": "06:00",
+    "end_hhmm": "09:00"
+  },
+
+  "case_name": "Martigny_reduction",
+  "export": {
+    "boxplots": {
+      "enabled": true,
+      "path": "out_Martigny_reducion_boxplots.json"}
+    },
+
+  "tie_breakers": {
+    "module": "tie_breakers"
+  },
+
+  "modes": [
+   {
+  "name": "IC_Martigny",
+  "category": "rail",
+  "pattern_streams": [
+    {
+      "label": "R91→Lausanne",
+      "depart_minutes": [11, 44],
+      "arr_offset_min": 0,
+      "w": 0.172
+    },
+    {
+      "label": "IR90→Lausanne",
+      "depart_minutes": [17],
+      "arr_offset_min": -1,
+      "w": 0.138
+    },
+    {
+      "label": "IR95→Lausanne",
+      "depart_minutes": [54],
+      "arr_offset_min": -1,
+      "w": 0.276
+    },
+
+    {
+      "label": "R91→Sion",
+      "depart_minutes": [17, 47],
+      "arr_offset_min": 0,
+      "w": 0.138
+    },
+    {
+      "label": "IR90→Sion",
+      "depart_minutes": [43],
+      "arr_offset_min": -1,
+      "w": 0.207
+    },
+    {
+      "label": "IR95→Sion",
+      "depart_minutes": [5],
+      "arr_offset_min": -1,
+      "w": 0.069
+    }
+  ]
+},
+
+
+
+
+    {
+      "name": "R81_Martigny-LeChable",
+      "category": "rail",
+      "template": {
+        "topology": "singletrack",
+
+        "st_config_path": "config_singletrack_R81.json",
+
+        "base_offset_min": 0,
+        "offset_range_min": 0,
+        "offset_step_min": 1,
+        "st_n_dep_per_hour": 2,
+        "st_min_headway": 20
+      }
+    }
+  ],
+
+  "transfers": [
+    {
+      "from_service": "IC_Martigny",
+      "from_anchor": "default",
+      "to_service": "R81_Martigny-LeChable",
+      "to_anchor": "Martigny",
+
+      "walk_time": 3.0,
+      "min_margin": 1.0,
+
+      "w_up": 0.6,
+      "w_down": 0.4,
+
+      "tie_breaker": "penalty_sum",
+      "tie_params": {
+        "max_wait": 10,
+        "lambda": 2.0
+      }
+    }
+  ],
+
+  "targets": ["R81_Martigny-LeChable"]
+}

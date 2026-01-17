@@ -1,0 +1,86 @@
+{
+  // ============================================================
+  // Fenêtre temporelle d’évaluation
+  // ============================================================
+  "window": {
+    "start_hhmm": "06:00", // début de la fenêtre d’évaluation (inclus), format HH:MM
+    "end_hhmm": "09:00"    // fin de la fenêtre d’évaluation (exclu), format HH:MM
+  },
+
+  // Nom du cas (sert d’identifiant)
+  "case_name": "Example_Loop",
+
+  // Module externe optionnel contenant des tie-breakers personnalisés
+  "tie_breakers": {
+    "module": "tie_breakers" // doit exposer TIE_BREAKERS = { "nom": fonction, ... }
+  },
+
+  // ============================================================
+  // Modes / services de transport
+  // ============================================================
+  "modes": [
+    {
+      // ----------------------------------------------------------
+      // Service fixe (non optimisé) basé sur pattern_streams
+      // ----------------------------------------------------------
+      "name": "Trains Hub",
+      "category": "rail",
+      "pattern_streams": [
+        {
+          "label": "IC→X",            // label informatif
+          "depart_minutes": [11, 44], // minutes dans l’heure répétées sur la fenêtre (+padding)
+          "arr_offset_min": 0,        // arrivée = départ + 0 min
+          "w": 1.0                    // poids du flux
+        }
+      ]
+    },
+
+    {
+      // ----------------------------------------------------------
+      // Service à optimiser : topology="loop"
+      // Interprétation dans le code :
+      // - un seul anchor "default"
+      // - on choisit un pattern (minutes dans l’heure) pour les départs
+      // - arrivals = departures + cycle_time
+      // - contrainte opérationnelle via cycle_time + turnaround (hmin)
+      // ----------------------------------------------------------
+      "name": "Shuttle Loop",
+      "category": "bus",
+      "template": {
+        "topology": "loop",          // boucle sur un stop unique ("default")
+        "n_per_hour": 3,             // nombre de départs par heure à tester
+        "equal_headway": false,      // false => patterns combinatoires (pas forcément réguliers)
+        "cycle_time": 18,            // durée d’un cycle complet (dep -> retour en arrivée au même stop)
+        "turnaround": 3              // temps de battement / rebroussement au stop (sert au hmin)
+      }
+    }
+  ],
+
+  // ============================================================
+  // Transferts (correspondances)
+  // ============================================================
+  "transfers": [
+    {
+      // Correspondance : Train -> Shuttle Loop
+      "from_service": "Trains Hub",
+      "from_anchor": "default",      // "Trains Hub" utilise l’ancre par défaut
+      "to_service": "Shuttle Loop",
+      "to_anchor": "default",        // "loop" => une seule ancre "default"
+
+      "walk_time": 4,                // temps de marche (minutes)
+      "min_margin": 1,               // marge minimale (minutes)
+
+      "w_up": 1.0,                   // sens "montée" (arrivée train -> départ shuttle)
+      "w_down": 0.0,                 // sens retour ignoré ici
+
+      "tie_breaker": "min_max",      // tie-breaker interne : minimise le pire des max waits
+      "tie_params": {}               // pas de paramètre pour min_max
+    }
+  ],
+
+  // ============================================================
+  // Services à optimiser (ordre séquentiel)
+  // ============================================================
+  "targets": ["Shuttle Loop"]
+  // Ici : on optimise uniquement la boucle (le train est fixe et sert de référence)
+}

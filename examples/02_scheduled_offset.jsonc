@@ -1,0 +1,104 @@
+{
+  // ============================================================
+  // Fenêtre temporelle d’évaluation
+  // ============================================================
+  "window": {
+    "start_hhmm": "06:00", // début de la fenêtre d’évaluation (inclus), format HH:MM
+    "end_hhmm": "09:00"    // fin de la fenêtre d’évaluation (exclu), format HH:MM
+  },
+
+  // Nom du cas (utile pour identifier le scénario / exports éventuels)
+  "case_name": "Example_Scheduled_Offset",
+
+  // Module externe optionnel qui contient des tie-breakers personnalisés
+  "tie_breakers": {
+    "module": "tie_breakers" // doit exposer un dict TIE_BREAKERS = { "nom": fonction, ... }
+  },
+
+  // ============================================================
+  // Modes / services de transport
+  // ============================================================
+  "modes": [
+    {
+      // ----------------------------------------------------------
+      // Service "fixe" cadencé via pattern_streams
+      // (aucun template => pas d’optimisation sur ce service)
+      // ----------------------------------------------------------
+      "name": "Trains Hub",
+      "category": "rail",
+      "pattern_streams": [
+        {
+          "label": "IC→X",          // label informatif (utile pour lecture humaine)
+          "depart_minutes": [11, 44], // minutes dans l’heure répétées sur la fenêtre (+padding)
+          "arr_offset_min": 0,      // arrivée = départ - offset (en minutes)
+          "w": 1.0                  // poids appliqué à ce flux (arr+dep)
+        }
+      ]
+    },
+
+    {
+      // ----------------------------------------------------------
+      // Service "scheduled + offset" :
+      // - l’horaire de base est fourni (ici via pattern_streams)
+      // - l’optimiseur ne génère PAS de nouveau pattern
+      // - il teste juste un décalage global (offset) sur TOUT l’horaire
+      // ----------------------------------------------------------
+      "name": "Bus Base Timetable",
+      "category": "bus",
+
+      "template": {
+        "topology": "scheduled",   // mode spécial: horaires fournis, optimisation = décalage global
+        "base_offset_min": 0,      // centre de la recherche (en minutes)
+        "offset_range_min": 10,    // demi-plage : ici offsets testés dans [-10, +10]
+        "offset_step_min": 1       // pas entre offsets testés (ici 1 minute)
+      },
+
+      "pattern_streams": [
+        {
+          "label": "bus",          // label informatif
+          "depart_minutes": [5, 35], // horaires de base (minutes dans l’heure)
+          "arr_offset_min": 20,    // arrivée = départ +20 min (temps de trajet simplifié)
+          "w": 1.0                 // poids de ce flux
+        }
+      ]
+
+      // Remarque importante :
+      // Ici le bus n’a PAS de "schedule" absolu HH:MM,
+      // mais un horaire de base "cadencé" via pattern_streams.
+      // Ça reste compatible avec "scheduled+offset", car l’offset décale ensuite
+      // toutes les arrivals/departures générées.
+    }
+  ],
+
+  // ============================================================
+  // Transferts (correspondance)
+  // ============================================================
+  "transfers": [
+    {
+      // Correspondance : Train -> Bus
+      "from_service": "Trains Hub",
+      "from_anchor": "default",       // pattern_streams => ancre par défaut
+      "to_service": "Bus Base Timetable",
+      "to_anchor": "default",
+
+      "walk_time": 3,                 // temps de marche (minutes)
+      "min_margin": 1,                // marge minimale (minutes)
+
+      "w_up": 1.0,                    // on ne considère que le sens "montée" (arrivée train -> départ bus)
+      "w_down": 0.0,                  // sens retour ignoré ici
+
+      "tie_breaker": "penalty",       // tie-breaker interne (voir optimizer.DEFAULT_PLUGIN_TB)
+      "tie_params": {
+        "max_wait": 10,               // seuil à partir duquel on pénalise l’attente max
+        "lambda": 2.0                 // intensité de la pénalité
+      }
+    }
+  ],
+
+  // ============================================================
+  // Services à optimiser (ordre séquentiel)
+  // ============================================================
+  "targets": ["Bus Base Timetable"]
+  // Ici : on optimise uniquement le bus (décalage global),
+  // le train reste fixe et sert de référence pour évaluer la correspondance.
+}

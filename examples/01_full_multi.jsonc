@@ -1,0 +1,182 @@
+{
+  // ============================================================
+  // Fenêtre temporelle d’évaluation
+  // ============================================================
+  "window": {
+    "start_hhmm": "06:00", // début de la fenêtre d’évaluation (inclus), format HH:MM
+    "end_hhmm": "09:00"    // fin de la fenêtre d’évaluation (exclus), format HH:MM
+  },
+
+  // Nom du cas (utilisé dans les exports et rapports)
+  "case_name": "Example_Full_Multi",
+
+  // ============================================================
+  // Exports
+  // ============================================================
+  "export": {
+    "boxplots": {
+      "enabled": true,                      // si true : exporte les distributions d’attente pour boxplots
+      "path": "out_example_boxplots.json"   // chemin du fichier de sortie
+    }
+
+    // Remarque :
+    // un export CSV existe aussi dans le code, mais il n’est pas activé ici.
+    // "csv": { "enabled": true, "path": "out_example_results.csv" }
+  },
+
+  // ============================================================
+  // Tie-breakers externes (optionnel)
+  // ============================================================
+  "tie_breakers": {
+    "module": "tie_breakers" // module Python exposant TIE_BREAKERS = {nom: fonction}
+  },
+
+  // ============================================================
+  // Modes / services de transport
+  // ============================================================
+  "modes": [
+    {
+      // ----------------------------------------------------------
+      // Service cadencé défini par pattern_streams (horaire fixé)
+      // ----------------------------------------------------------
+      "name": "Trains Hub",
+      "category": "rail",
+
+      "pattern_streams": [
+        {
+          "label": "R91→CityA",       // label informatif (non utilisé dans l’optimisation)
+          "depart_minutes": [8, 38],  // minutes de départ dans l’heure (0–59), répétées sur la fenêtre
+          "arr_offset_min": 0,        // arrivée = départ - décalage (en minutes)
+          "w": 0.20                   // poids appliqué à ce flux (arrivées + départs)
+        },
+        {
+          "label": "IR90→CityA",
+          "depart_minutes": [52],
+          "arr_offset_min": -1,
+          "w": 0.30
+        },
+        {
+          "label": "R91→CityB",
+          "depart_minutes": [22, 52],
+          "arr_offset_min": 0,
+          "w": 0.20
+        },
+        {
+          "label": "IR90→CityB",
+          "depart_minutes": [8],
+          "arr_offset_min": 0,
+          "w": 0.30
+        }
+
+        // Option avancée :
+        // au lieu de "w", on peut utiliser :
+        // "w_arr": 1.0,  // poids uniquement pour les arrivées
+        // "w_dep": 1.0   // poids uniquement pour les départs
+      ]
+    },
+
+    {
+      // ----------------------------------------------------------
+      // Service optimisé : topologie LINE (ligne A <-> B)
+      // ----------------------------------------------------------
+      "name": "Funi A–B",
+      "category": "funi",
+
+      "template": {
+        "topology": "line",        // ligne bidirectionnelle entre deux ancres
+        "anchors": ["A", "B"],     // exactement deux ancres pour une ligne
+
+        "n_per_hour": 3,           // nombre de départs par heure à l’ancre A (0 = inféré)
+        "equal_headway": false,    // false => patterns combinatoires (non réguliers)
+
+        "tt_AB": 14,               // temps de parcours A → B (minutes)
+        "tt_BA": 14,               // temps de parcours B → A (minutes)
+
+        "turnaround_A": 4,         // temps de retournement à A (minutes)
+        "turnaround_B": 4,         // temps de retournement à B (minutes)
+
+        "phi_minutes": "optimize"  // déphasage entre A et B :
+                                   // - entier => valeur fixée
+                                   // - "optimize" => test de toutes les valeurs 0..59
+      }
+    },
+
+    {
+      // ----------------------------------------------------------
+      // Service optimisé : ROUTE (boucle multi-arrêts)
+      // ----------------------------------------------------------
+      "name": "Bus Loop (multi-stops)",
+      "category": "bus",
+
+      "template": {
+        "topology": "route",                // boucle fermée multi-stops
+
+        "stops": [
+          "B",
+          "Stop2",
+          "Stop3",
+          "B_return"
+        ],                                  // liste ordonnée des arrêts (le premier est l’ancre de référence)
+
+        "leg_minutes": [6, 8, 10, 5],       // temps de parcours entre arrêts successifs
+                                            // le dernier correspond au retour vers le premier arrêt
+
+        "dwells": {
+          "Stop3": 3                        // temps d’arrêt (dwell) à Stop3 (minutes)
+        },
+
+        "n_per_hour": 2,                    // départs par heure à l’arrêt de référence
+        "equal_headway": true               // true => départs régulièrement espacés
+      }
+    }
+  ],
+
+  // ============================================================
+  // Transferts (correspondances entre services)
+  // ============================================================
+  "transfers": [
+    {
+      // Correspondance : Trains -> Funiculaire à l’ancre A
+      "from_service": "Trains Hub",
+      "from_anchor": "default",   // ancre par défaut pour les services à pattern_streams
+      "to_service": "Funi A–B",
+      "to_anchor": "A",
+
+      "walk_time": 6,             // temps de marche entre les deux services (minutes)
+      "min_margin": 2,            // marge minimale de correspondance (minutes)
+
+      "w_up": 0.6,                // poids pour le sens montée (arrivée -> départ)
+      "w_down": 0.4,              // poids pour le sens descente (arrivée retour)
+
+      "tie_breaker": "penalty_sum", // règle utilisée en cas d’ex æquo
+      "tie_params": {
+        "max_wait": 10,           // seuil de pénalisation (minutes)
+        "lambda": 2.0             // intensité de la pénalité
+      }
+    },
+    {
+      // Correspondance : Funiculaire -> Bus à l’ancre B
+      "from_service": "Funi A–B",
+      "from_anchor": "B",
+      "to_service": "Bus Loop (multi-stops)",
+      "to_anchor": "B",
+
+      "walk_time": 2,
+      "min_margin": 1,
+
+      "w_up": 0.5,
+      "w_down": 0.5,
+
+      "tie_breaker": "min_max",   // minimise la pire attente (max_up / max_down)
+      "tie_params": {}
+    }
+  ],
+
+  // ============================================================
+  // Ordre d’optimisation (séquentiel / hiérarchique)
+  // ============================================================
+  "targets": [
+    "Funi A–B",
+    "Bus Loop (multi-stops)"
+  ]
+}

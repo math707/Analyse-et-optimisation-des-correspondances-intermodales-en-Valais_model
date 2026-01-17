@@ -1,0 +1,92 @@
+{
+  // ==================================================================
+  // Définition détaillée de la ligne singletrack
+  // Ce fichier décrit UNIQUEMENT l’infrastructure et l’exploitation
+  // interne de la ligne (indépendamment des correspondances)
+  // ==================================================================
+
+  "line": {
+    // Nom descriptif de la ligne (informatif)
+    "name": "R81 Martigny–Le Châble",
+
+    // Liste ordonnée des arrêts de la ligne
+    // L’ordre est fondamental pour la reconstruction horaire
+    "stops": [
+      "Martigny",
+      "Martigny-Bourg",
+      "Bovernier",
+      "Sembrancher",
+      "Le Châble VS"
+    ],
+
+    // --------------------------------------------------------------
+    // Temps de parcours possibles ENTRE arrêts consécutifs (sens UP)
+    // Chaque sous-liste correspond à un tronçon
+    // L’optimizer choisit une valeur par tronçon
+    // --------------------------------------------------------------
+    "run_times_up": [
+      [2, 3, 4],   // Martigny → Martigny-Bourg
+      [6, 7],      // Martigny-Bourg → Bovernier
+      [4, 5, 6],   // Bovernier → Sembrancher
+      [8, 9]       // Sembrancher → Le Châble VS
+    ],
+
+    // Temps de parcours possibles dans le sens DOWN
+    // (souvent identiques, mais peuvent être différents)
+    "run_times_down": [
+      [2, 3, 4],
+      [6, 7],
+      [4, 5, 6],
+      [8, 9]
+    ],
+
+    // --------------------------------------------------------------
+    // Temps d’arrêt possibles (dwell times) dans chaque station
+    // --------------------------------------------------------------
+    "dwell_times": {
+      "Martigny": [3],              // arrêt fixe au terminus
+      "Martigny-Bourg": [0, 1],     // arrêt optionnel court
+      "Bovernier": [0, 1],
+      "Sembrancher": [0, 1],
+      "Le Châble VS": [3]           // arrêt fixe au terminus
+    },
+
+    // Temps d’arrêt maximum autorisé aux terminus
+    // (contrainte de robustesse / exploitation)
+    "terminus_dwell_max": {
+      "Martigny": 8,
+      "Le Châble VS": 8
+    },
+
+    // Horizon temporel de la ligne (en minutes)
+    // Typiquement égal à la période (ex : 60 min)
+    "horizon": 60
+  },
+
+  // ==================================================================
+  // Contraintes globales de la ligne singletrack
+  // ==================================================================
+
+  // Liste des arrêts où les croisements sont INTERDITS
+  // (quais trop courts, contraintes d’exploitation, etc.)
+  "forbidden_meet_stops": [
+    "Martigny",
+    "Martigny-Bourg",
+    "Le Châble VS"
+  ],
+
+  // Période fondamentale du système (en minutes)
+  // Doit être cohérente avec l’horizon
+  "period_min": 60,
+
+  // Nombre de cycles périodiques modélisés
+  // (1 = un cycle sur la période)
+  "n_cycles_periodic": 1,
+
+  // Marge supplémentaire ajoutée aux terminus (robustesse)
+  "extra_terminus_slack": 0.0,
+
+  // Interdit les dépassements sur la ligne
+  // (contrainte forte de sécurité / exploitation)
+  "enable_no_overtaking": true
+}

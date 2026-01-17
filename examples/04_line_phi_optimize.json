@@ -1,0 +1,47 @@
+{
+  "window": { "start_hhmm": "06:00", "end_hhmm": "09:00" },
+  "case_name": "Example_Line_Phi_Optimize",
+  "tie_breakers": { "module": "tie_breakers" },
+
+  "modes": [
+    {
+      "name": "Trains Hub",
+      "category": "rail",
+      "pattern_streams": [
+        { "label": "IC→X", "depart_minutes": [11, 44], "arr_offset_min": 0, "w": 1.0 }
+      ]
+    },
+    {
+      "name": "Line A–B",
+      "category": "funi",
+      "template": {
+        "topology": "line",
+        "anchors": ["A", "B"],
+        "n_per_hour": 3,
+        "equal_headway": true,
+        "tt_AB": 14,
+        "tt_BA": 14,
+        "turnaround_A": 4,
+        "turnaround_B": 4,
+        "phi_minutes": "optimize"
+      }
+    }
+  ],
+
+  "transfers": [
+    {
+      "from_service": "Trains Hub",
+      "from_anchor": "default",
+      "to_service": "Line A–B",
+      "to_anchor": "A",
+      "walk_time": 5,
+      "min_margin": 2,
+      "w_up": 1.0,
+      "w_down": 0.0,
+      "tie_breaker": "penalty_sum",
+      "tie_params": { "max_wait": 10, "lambda": 2.0 }
+    }
+  ],
+
+  "targets": ["Line A–B"]
+}

@@ -1,0 +1,100 @@
+{
+  "window": { "start_hhmm": "06:00", "end_hhmm": "09:00" },
+  "tie_breakers": { "module": "tie_breakers" },
+
+  "case_name": "Sierre_case_ref_3_bus",
+  "export": {
+    "boxplots": {
+      "enabled": true,
+      "path": "out_Sierre_case_ref_3_bus_boxplots.json"
+    }
+  },
+
+
+  "modes": [
+    {
+      "name": "Trains Sierre",
+      "category": "train",
+      "pattern_streams": [
+        { "label": "R91→Sion", "depart_minutes": [8, 36], "arr_offset_min": 0, "w": 0.1875 },
+        { "label": "R91→Brig", "depart_minutes": [22, 52], "arr_offset_min": 0, "w": 0.0625 },
+        { "label": "IR95→Sion", "depart_minutes": [28], "arr_offset_min": -1, "w": 0.1875 },
+        { "label": "IR95→Brig", "depart_minutes": [31], "arr_offset_min": -1, "w": 0.125 },
+        { "label": "IR90→Sion", "depart_minutes": [51], "arr_offset_min": 0, "w": 0.25 },
+        { "label": "IR90→Brig", "depart_minutes": [8], "arr_offset_min": 0, "w": 0.1875 }
+      ]
+    },
+    {
+      "name": "Funi Sierre–Montana",
+      "category": "funi",
+      "template": {
+        "topology": "line",
+        "anchors": ["Sierre", "Montana"],
+        "n_per_hour": 0,
+        "equal_headway": true,
+        "tt_AB": 14,
+        "tt_BA": 14,
+        "turnaround_A": 4,
+        "turnaround_B": 4,
+        "phi_minutes": 0
+      }
+    },
+    {
+      "name": "Bus Station (multi)",
+      "category": "bus",
+      "template": {
+        "topology": "route",
+        "stops": ["Aminona", "Montana_gare_direction_Crans", "Crans Forest", "Montana_gare_direction_Aminona"],
+        "leg_minutes": [9, 16, 17, 8],
+        "dwells": { "Aminona": 3, "Crans Forest": 7 },
+        "n_per_hour": 3,
+        "equal_headway": false
+      }
+    }
+  ],
+
+  "transfers": [
+    {
+      "from_service": "Trains Sierre",
+      "to_service": "Funi Sierre–Montana",
+      "from_anchor": "default",
+      "to_anchor": "Sierre",
+      "walk_time": 6,
+      "min_margin": 2,
+      "w_up": 0.6,
+      "w_down": 0.4,
+      "tie_breaker": "penalty_sum",
+      "tie_params": { "max_wait": 10, "lambda": 2.0 }
+    },
+    {
+      "from_service": "Funi Sierre–Montana",
+      "to_service": "Bus Station (multi)",
+      "from_anchor": "Montana",
+      "to_anchor": "Montana_gare_direction_Crans",
+      "walk_time": 2,
+      "min_margin": 1,
+      "w_up": 0.25,
+      "w_down": 0.25,
+      "tie_breaker": "penalty_sum",
+      "tie_params": { "max_wait": 5, "lambda": 2.0 }
+    },
+    {
+  "from_service": "Funi Sierre–Montana",
+  "to_service":   "Bus Station (multi)",
+  "from_anchor":  "Montana",
+  "to_anchor":    "Montana_gare_direction_Aminona",
+
+  "walk_time": 2,
+  "min_margin": 1,
+
+  "w_up":   0.25,
+  "w_down": 0.25,
+
+  "tie_breaker": "penalty_sum",
+  "tie_params": { "max_wait": 5, "lambda": 2.0 }
+}
+
+  ],
+
+  "targets": ["Funi Sierre–Montana", "Bus Station (multi)"]
+}

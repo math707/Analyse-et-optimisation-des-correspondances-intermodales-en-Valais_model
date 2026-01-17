@@ -1,0 +1,100 @@
+{
+  // ============================================================
+  // Fenêtre temporelle d’évaluation
+  // ============================================================
+  "window": {
+    "start_hhmm": "06:00", // début de la fenêtre d’évaluation (inclus), format HH:MM
+    "end_hhmm": "09:00"    // fin de la fenêtre d’évaluation (exclu), format HH:MM
+  },
+
+  // Nom du cas (sert d’identifiant)
+  "case_name": "Example_Line_Phi_Optimize",
+
+  // Module externe optionnel contenant des tie-breakers personnalisés
+  "tie_breakers": {
+    "module": "tie_breakers" // doit exposer TIE_BREAKERS = { "nom": fonction, ... }
+  },
+
+  // ============================================================
+  // Modes / services de transport
+  // ============================================================
+  "modes": [
+    {
+      // ----------------------------------------------------------
+      // Service fixe (non optimisé) basé sur pattern_streams
+      // ----------------------------------------------------------
+      "name": "Trains Hub",
+      "category": "rail",
+      "pattern_streams": [
+        {
+          "label": "IC→X",            // label informatif
+          "depart_minutes": [11, 44], // minutes dans l’heure répétées sur la fenêtre (+padding)
+          "arr_offset_min": 0,        // arrivée = départ + 0 min
+          "w": 1.0                    // poids du flux
+        }
+      ]
+    },
+
+    {
+      // ----------------------------------------------------------
+      // Service à optimiser : topology="line"
+      // Interprétation dans le code :
+      // - deux anchors nommés (ici "A" et "B")
+      // - on choisit un pattern (minutes dans l’heure) pour les départs à A
+      // - les départs à B sont déduits via phi_minutes :
+      //     dep_B(minute) = dep_A(minute) + phi (mod 60)
+      // - les arrivées sont déduites via tt_AB / tt_BA
+      // - si phi_minutes="optimize" : l’optimizer teste phi=0..59
+      // ----------------------------------------------------------
+      "name": "Line A–B",
+      "category": "funi",
+      "template": {
+        "topology": "line",
+
+        "anchors": ["A", "B"],   // noms exacts des deux ancres (créées côté engine_runner)
+        "n_per_hour": 3,         // nombre de départs/h à A (donc aussi à B)
+        "equal_headway": true,   // true => patterns réguliers (offsets testés), pas combinatoire
+
+        "tt_AB": 14,             // temps de parcours A -> B (minutes)
+        "tt_BA": 14,             // temps de parcours B -> A (minutes)
+
+        "turnaround_A": 4,       // battement à A (utilisé surtout pour hmin côté génération)
+        "turnaround_B": 4,       // battement à B
+
+        "phi_minutes": "optimize" // optimise la phase B par rapport à A (phi=0..59)
+      }
+    }
+  ],
+
+  // ============================================================
+  // Transferts (correspondances)
+  // ============================================================
+  "transfers": [
+    {
+      // Correspondance : Train -> Ligne A–B (ancre A)
+      "from_service": "Trains Hub",
+      "from_anchor": "default",
+
+      "to_service": "Line A–B",
+      "to_anchor": "A",          // IMPORTANT : doit correspondre à un des anchors de la ligne
+
+      "walk_time": 5,            // temps de marche (minutes)
+      "min_margin": 2,           // marge minimale (minutes)
+
+      "w_up": 1.0,               // sens "montée" (arrivée train -> départ à A)
+      "w_down": 0.0,             // sens retour ignoré ici
+
+      "tie_breaker": "penalty_sum",       // tie-breaker plugin (dans tie_breakers.py)
+      "tie_params": {
+        "max_wait": 10,          // seuil "acceptable" (minutes)
+        "lambda": 2.0            // intensité de pénalité (par minute au-dessus)
+      }
+    }
+  ],
+
+  // ============================================================
+  // Services à optimiser (ordre séquentiel)
+  // ============================================================
+  "targets": ["Line A–B"]
+  // Ici : on optimise uniquement la ligne (le train est fixe et sert de référence)
+}

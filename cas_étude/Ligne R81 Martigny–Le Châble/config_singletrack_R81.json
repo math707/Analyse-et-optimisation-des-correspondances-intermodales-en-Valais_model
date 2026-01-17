@@ -1,0 +1,50 @@
+{
+  "line": {
+    "name": "R81 Martigny–Le Châble",
+    "stops": [
+      "Martigny",
+      "Martigny-Bourg",
+      "Bovernier",
+      "Sembrancher",
+      "Le Châble VS"
+    ],
+    "run_times_up": [
+      [2, 3, 4],
+      [6, 7],
+      [4, 5, 6],
+      [8, 9]
+    ],
+    "run_times_down": [
+      [2, 3, 4],
+      [6, 7],
+      [4, 5, 6],
+      [8, 9]
+    ],
+    "dwell_times": {
+      "Martigny": [3],
+      "Martigny-Bourg": [0, 1],
+      "Bovernier": [0, 1],
+      "Sembrancher": [0, 1],
+      "Le Châble VS": [3]
+    },
+    "terminus_dwell_max": {
+      "Martigny": 8,
+      "Le Châble VS": 8
+    },
+    "horizon": 60
+  },
+
+
+
+  "forbidden_meet_stops": [
+    "Martigny",
+    "Martigny-Bourg",
+    "Le Châble VS"
+  ],
+
+  "period_min": 60,
+  "n_cycles_periodic": 1,
+
+  "extra_terminus_slack": 0.0,
+  "enable_no_overtaking": true
+}

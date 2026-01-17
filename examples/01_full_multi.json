@@ -1,0 +1,81 @@
+{
+  "window": { "start_hhmm": "06:00", "end_hhmm": "09:00" },
+  "case_name": "Example_Full_Multi",
+
+  "export": {
+    "boxplots": { "enabled": true, "path": "out_example_boxplots.json" }
+  },
+
+  "tie_breakers": { "module": "tie_breakers" },
+
+  "modes": [
+    {
+      "name": "Trains Hub",
+      "category": "rail",
+      "pattern_streams": [
+        { "label": "R91→CityA", "depart_minutes": [8, 38], "arr_offset_min": 0, "w": 0.20 },
+        { "label": "IR90→CityA", "depart_minutes": [52], "arr_offset_min": -1, "w": 0.30 },
+        { "label": "R91→CityB", "depart_minutes": [22, 52], "arr_offset_min": 0, "w": 0.20 },
+        { "label": "IR90→CityB", "depart_minutes": [8], "arr_offset_min": 0, "w": 0.30 }
+      ]
+    },
+
+    {
+      "name": "Funi A–B",
+      "category": "funi",
+      "template": {
+        "topology": "line",
+        "anchors": ["A", "B"],
+        "n_per_hour": 3,
+        "equal_headway": false,
+        "tt_AB": 14,
+        "tt_BA": 14,
+        "turnaround_A": 4,
+        "turnaround_B": 4,
+        "phi_minutes": "optimize"
+      }
+    },
+
+    {
+      "name": "Bus Loop (multi-stops)",
+      "category": "bus",
+      "template": {
+        "topology": "route",
+        "stops": ["B", "Stop2", "Stop3", "B_return"],
+        "leg_minutes": [6, 8, 10, 5],
+        "dwells": { "Stop3": 3 },
+        "n_per_hour": 2,
+        "equal_headway": true
+      }
+    }
+  ],
+
+  "transfers": [
+    {
+      "from_service": "Trains Hub",
+      "from_anchor": "default",
+      "to_service": "Funi A–B",
+      "to_anchor": "A",
+      "walk_time": 6,
+      "min_margin": 2,
+      "w_up": 0.6,
+      "w_down": 0.4,
+      "tie_breaker": "penalty_sum",
+      "tie_params": { "max_wait": 10, "lambda": 2.0 }
+    },
+    {
+      "from_service": "Funi A–B",
+      "from_anchor": "B",
+      "to_service": "Bus Loop (multi-stops)",
+      "to_anchor": "B",
+      "walk_time": 2,
+      "min_margin": 1,
+      "w_up": 0.5,
+      "w_down": 0.5,
+      "tie_breaker": "min_max",
+      "tie_params": {}
+    }
+  ],
+
+  "targets": ["Funi A–B", "Bus Loop (multi-stops)"]
+}

@@ -1,0 +1,45 @@
+{
+  "window": { "start_hhmm": "06:00", "end_hhmm": "09:00" },
+  "case_name": "Example_Scheduled_Offset",
+  "tie_breakers": { "module": "tie_breakers" },
+
+  "modes": [
+    {
+      "name": "Trains Hub",
+      "category": "rail",
+      "pattern_streams": [
+        { "label": "IC→X", "depart_minutes": [11, 44], "arr_offset_min": 0, "w": 1.0 }
+      ]
+    },
+    {
+      "name": "Bus Base Timetable",
+      "category": "bus",
+      "template": {
+        "topology": "scheduled",
+        "base_offset_min": 0,
+        "offset_range_min": 10,
+        "offset_step_min": 1
+      },
+      "pattern_streams": [
+        { "label": "bus", "depart_minutes": [5, 35], "arr_offset_min": 20, "w": 1.0 }
+      ]
+    }
+  ],
+
+  "transfers": [
+    {
+      "from_service": "Trains Hub",
+      "from_anchor": "default",
+      "to_service": "Bus Base Timetable",
+      "to_anchor": "default",
+      "walk_time": 3,
+      "min_margin": 1,
+      "w_up": 1.0,
+      "w_down": 0.0,
+      "tie_breaker": "penalty",
+      "tie_params": { "max_wait": 10, "lambda": 2.0 }
+    }
+  ],
+
+  "targets": ["Bus Base Timetable"]
+}

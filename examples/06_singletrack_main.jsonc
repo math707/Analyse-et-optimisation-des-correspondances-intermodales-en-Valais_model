@@ -1,0 +1,119 @@
+{
+  // ------------------------------------------------------------------
+  // Fenêtre temporelle d’analyse (heures prises en compte par l’optimizer)
+  // ------------------------------------------------------------------
+  "window": {
+    "start_hhmm": "06:00",   // début de la fenêtre (HH:MM)
+    "end_hhmm": "09:00"      // fin de la fenêtre (HH:MM)
+  },
+
+  // Nom du cas d’étude (utilisé pour les exports et les boxplots)
+  "case_name": "Example_Singletrack",
+
+  // ------------------------------------------------------------------
+  // Configuration des exports
+  // Ici : export des distributions d’attente pour les boxplots
+  // ------------------------------------------------------------------
+  "export": {
+    "boxplots": {
+      "enabled": true,                       // active l’export boxplots
+      "path": "out_singletrack_boxplots.json" // fichier JSON généré
+    }
+  },
+
+  // ------------------------------------------------------------------
+  // Module de tie-breakers utilisé pour départager des solutions ex æquo
+  // ------------------------------------------------------------------
+  "tie_breakers": {
+    "module": "tie_breakers"
+  },
+
+  // ------------------------------------------------------------------
+  // Définition des services (modes de transport)
+  // ------------------------------------------------------------------
+  "modes": [
+
+    // ================================================================
+    // Service amont : trains IC arrivant au hub
+    // ================================================================
+    {
+      "name": "IC_Hub",        // nom logique du service
+      "category": "rail",      // catégorie (libre, informative)
+
+      // Streams cadencés : arrivées périodiques du train au hub
+      "pattern_streams": [
+        {
+          "label": "IC→City",      // étiquette descriptive
+          "depart_minutes": [11, 44], // minutes dans l’heure des arrivées
+          "arr_offset_min": 0,     // décalage éventuel (min)
+          "w": 1.0                 // poids (importance relative)
+        }
+      ]
+    },
+
+    // ================================================================
+    // Service optimisé : ligne ferroviaire à voie unique (singletrack)
+    // ================================================================
+    {
+      "name": "R81",
+      "category": "rail",
+
+      "template": {
+        // Topologie singletrack : reconstruction exacte via fichier dédié
+        "topology": "singletrack",
+
+        // Fichier décrivant la géométrie et l’exploitation de la ligne
+        // (arrêts, temps de parcours, croisements, contraintes, etc.)
+        "st_config_path": "examples/06_singletrack_line_config_R81.json",
+
+        // Offset global éventuel appliqué au pattern final
+        "base_offset_min": 0,
+        "offset_range_min": 0,   // 0 = pas de recherche d’offset
+        "offset_step_min": 1,    // pas de discrétisation (si offset > 0)
+
+        // Paramètres de génération des départs
+        "st_n_dep_per_hour": 2,  // nombre de départs par heure
+        "st_min_headway": 20     // espacement minimal entre départs (min)
+      }
+    }
+  ],
+
+  // ------------------------------------------------------------------
+  // Définition des correspondances (transferts entre services)
+  // ------------------------------------------------------------------
+  "transfers": [
+    {
+      // Service amont (train)
+      "from_service": "IC_Hub",
+      "from_anchor": "default",
+
+      // Service aval (singletrack)
+      "to_service": "R81",
+      "to_anchor": "Martigny",
+
+      // Temps de marche entre quais / arrêts
+      "walk_time": 3,
+
+      // Marge minimale requise pour que la correspondance soit valide
+      "min_margin": 1,
+
+      // Pondération des directions (montée / descente)
+      "w_up": 1.0,
+      "w_down": 0.0,
+
+      // Tie-breaker utilisé si plusieurs solutions sont équivalentes
+      "tie_breaker": "penalty_sum",
+
+      // Paramètres spécifiques du tie-breaker
+      "tie_params": {
+        "max_wait": 10,   // attente maximale pénalisée
+        "lambda": 2.0     // facteur de pénalisation
+      }
+    }
+  ],
+
+  // ------------------------------------------------------------------
+  // Services effectivement optimisés dans ce cas
+  // ------------------------------------------------------------------
+  "targets": ["R81"]
+}

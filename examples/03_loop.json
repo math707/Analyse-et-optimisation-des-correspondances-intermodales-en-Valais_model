@@ -1,0 +1,43 @@
+{
+  "window": { "start_hhmm": "06:00", "end_hhmm": "09:00" },
+  "case_name": "Example_Loop",
+  "tie_breakers": { "module": "tie_breakers" },
+
+  "modes": [
+    {
+      "name": "Trains Hub",
+      "category": "rail",
+      "pattern_streams": [
+        { "label": "IC→X", "depart_minutes": [11, 44], "arr_offset_min": 0, "w": 1.0 }
+      ]
+    },
+    {
+      "name": "Shuttle Loop",
+      "category": "bus",
+      "template": {
+        "topology": "loop",
+        "n_per_hour": 3,
+        "equal_headway": false,
+        "cycle_time": 18,
+        "turnaround": 3
+      }
+    }
+  ],
+
+  "transfers": [
+    {
+      "from_service": "Trains Hub",
+      "from_anchor": "default",
+      "to_service": "Shuttle Loop",
+      "to_anchor": "default",
+      "walk_time": 4,
+      "min_margin": 1,
+      "w_up": 1.0,
+      "w_down": 0.0,
+      "tie_breaker": "min_max",
+      "tie_params": {}
+    }
+  ],
+
+  "targets": ["Shuttle Loop"]
+}
