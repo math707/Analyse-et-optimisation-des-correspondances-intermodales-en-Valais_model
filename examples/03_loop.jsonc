@@ -50,7 +50,7 @@
         "topology": "loop",          // boucle sur un stop unique ("default")
         "n_per_hour": 3,             // nombre de départs par heure à tester
         "equal_headway": false,      // false => patterns combinatoires (pas forcément réguliers)
-        "cycle_time": 18,            // durée d’un cycle complet (dep -> retour en arrivée au même stop)
+        "cycle_time": 17,            // durée d’un cycle complet (dep -> retour en arrivée au même stop)
         "turnaround": 3              // temps de battement / rebroussement au stop (sert au hmin)
       }
     }
@@ -84,3 +84,4 @@
   "targets": ["Shuttle Loop"]
   // Ici : on optimise uniquement la boucle (le train est fixe et sert de référence)
 }
+
